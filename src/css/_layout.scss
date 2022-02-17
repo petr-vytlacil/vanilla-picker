@@ -21,26 +21,26 @@
 
     $width-gutter: 1em;
     $width-slider: 2em;
-    
-    
+
+
     &.picker_wrapper {
         display: flex;
         flex-flow: row wrap;
         justify-content: space-between;
         align-items: stretch;
-        
+
         font-size: 10px;
         width: 25em;
         //Since we use "em"s for layout here, restore the correct font-size on elements with text:
         input, button {
             font-size: 1rem;
         }
-        
+
         padding: math.div($width-gutter, 2);
         > * {
             margin: math.div($width-gutter, 2);
         }
-        
+
         //https://stackoverflow.com/questions/29732575/line-break-in-multi-line-flexbox
         //We use this to insert a line break after .picker_alpha,
         //which lets us set .picker_sl to use all available space to the left of it (via flex-grow: 1),
@@ -53,22 +53,22 @@
             order: 1;
         }
     }
-    
-    
+
+
     .picker_slider, .picker_selector {
         padding: math.div($width-slider, 2);
     }
-    
-    
+
+
     .picker_hue {
         width: 100%;
     }
-    
-    
+
+
     .picker_sl {
         //width: calc(100% - #{2*$width-gutter} - #{$width-slider});
         flex: 1 1 auto;
-        
+
         //With variable width, we need a pseudo-element to make it a square, whatever size:
         &::before {
             content: '';
@@ -76,8 +76,8 @@
             padding-bottom: 100%;
         }
     }
-    
-    
+
+
     .picker_editor {
         order: 1;
         //width: 100%;
@@ -88,17 +88,21 @@
             height: 100%;
         }
     }
-    
-    
+
+
     .picker_sample {
         order: 1;
         //width: 170px;
         //height: 30px;
         flex: 1 1 auto;
     }
-    
-    
+
+
     .picker_done, .picker_cancel {
+        order: 1;
+    }
+
+    .picker_second_button {
         order: 1;
     }
 

@@ -38,7 +38,7 @@ class Picker {
     //https://stackoverflow.com/questions/24214962/whats-the-proper-way-to-document-callbacks-with-jsdoc
     /**
      * A callback that gets the picker's current color value.
-     * 
+     *
      * @callback Picker~colorCallback
      * @param {Object} color
      * @param {number[]} color.rgba       - RGBA color components.
@@ -52,13 +52,13 @@ class Picker {
 
     /**
      * Create a color picker.
-     * 
+     *
      * @example
      * var picker = new Picker(myParentElement);
      * picker.onDone = function(color) {
      *     myParentElement.style.backgroundColor = color.rgbaString;
      * };
-     * 
+     *
      * @example
      * var picker = new Picker({
      *     parent: myParentElement,
@@ -67,7 +67,7 @@ class Picker {
      *                   myParentElement.style.backgroundColor = color.rgbaString;
      *               },
      * });
-     * 
+     *
      * @param {Object} options - @see {@linkcode Picker#setOptions|setOptions()}
      */
     constructor(options) {
@@ -84,7 +84,7 @@ class Picker {
             cancelButton: false,
             defaultColor: '#0cf'
         };
-        
+
         this._events = new utils.EventBucket();
 
         /**
@@ -98,6 +98,11 @@ class Picker {
          */
         this.onDone = null;
         /**
+         * Callback when the user clicks "Second button".
+         * @member {Picker~colorCallback}
+         */
+        this.onSecondButton = null;
+        /**
          * Callback when the popup opens.
          * @member {Picker~colorCallback}
          */
@@ -107,14 +112,14 @@ class Picker {
          * @member {Picker~colorCallback}
          */
         this.onClose = null;
-        
+
         this.setOptions(options);
     }
 
 
     /**
      * Set the picker options.
-     * 
+     *
      * @param {Object}       options
      * @param {HTMLElement}  options.parent           - Which element the picker should be attached to.
      * @param {('top'|'bottom'|'left'|'right'|false)}
@@ -129,6 +134,7 @@ class Picker {
      * @param {string}       [options.color]          - Initial color for the picker.
      * @param {function}     [options.onChange]       - @see {@linkcode Picker#onChange|onChange}
      * @param {function}     [options.onDone]         - @see {@linkcode Picker#onDone|onDone}
+     * @param {function}     [options.onSecondButton] - @see {@linkcode Picker#onDone|onSecondButton}
      * @param {function}     [options.onOpen]         - @see {@linkcode Picker#onOpen|onOpen}
      * @param {function}     [options.onClose]        - @see {@linkcode Picker#onClose|onClose}
      */
@@ -154,7 +160,7 @@ class Picker {
             //    transfer(options.popup, settings.popup);
             //    skipKeys.push('popup');
             //}
-            
+
             /* //TODO: options.layout -> Object
             {
                 mode: 'hsla',       //'hsla', 'hasl', 'hsl'. Deprecate options.alpha
@@ -166,7 +172,7 @@ class Picker {
                 //.template as well?
             }
             //*/
-            
+
             //New parent?
             if(settings.parent && options.parent && (settings.parent !== options.parent)) {
                 this._events.remove(settings.parent); //.removeEventListener('click', this._openProxy, false);
@@ -174,19 +180,20 @@ class Picker {
             }
 
             transfer(options, settings/*, skipKeys*/);
-        
+
             //Event callbacks. Hook these up before setColor() below,
             //because we'll need to fire onChange() if there is a color in the options
             if(options.onChange) { this.onChange = options.onChange; }
             if(options.onDone)   { this.onDone   = options.onDone; }
+            if(options.onSecondButton)   { this.onSecondButton   = options.onSecondButton; }
             if(options.onOpen)   { this.onOpen   = options.onOpen; }
             if(options.onClose)  { this.onClose  = options.onClose; }
-        
+
             //Note: Look for color in 'options', as a color value in 'settings' may be an old one we don't want to revert to.
             const col = options.color || options.colour;
             if(col) { this._setColor(col); }
         }
-        
+
         //Init popup behavior once we have all the parts we need:
         const parent = settings.parent;
         if(parent && settings.popup && !this._popupInited) {
@@ -202,7 +209,7 @@ class Picker {
             //
             //https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key/Key_Values#Whitespace_keys
             onKey(this._events, parent, [' ', 'Spacebar', 'Enter'], openProxy/*, true*/);
-            
+
             //This must wait until we have created our DOM..
             //  addEvent(window, 'mousedown', (e) => this.closeHandler(e));
             //  addEvent(this._domOkay, 'click', (e) => this.closeHandler(e));
@@ -222,7 +229,7 @@ class Picker {
         if(this.show()) {
             //If the parent is an <a href="#"> element, avoid scrolling to the top:
             e && e.preventDefault();
-            
+
             //A trick to avoid re-opening the dialog if you click the parent element while the dialog is open:
             this.settings.parent.style.pointerEvents = 'none';
 
@@ -291,7 +298,7 @@ class Picker {
     movePopup(options, open) {
         //Cleanup if the popup is currently open (at least revert the current parent's .pointerEvents);
         this.closeHandler();
-        
+
         this.setOptions(options);
         if(open) {
             this.openHandler();
@@ -301,7 +308,7 @@ class Picker {
 
     /**
      * Set/initialize the picker's color.
-     * 
+     *
      * @param {string}  color  - Color name, RGBA/HSLA/HEX string, or RGBA array.
      * @param {boolean} silent - If true, won't trigger onChange.
      */
@@ -345,7 +352,7 @@ class Picker {
     show() {
         const parent = this.settings.parent;
         if(!parent) { return false; }
-        
+
         //Unhide html if it exists
         if(this.domElement) {
             const toggled = this._toggleDOM(true);
@@ -358,7 +365,7 @@ class Picker {
 
         const html = this.settings.template || `## PLACEHOLDER-HTML ##`;
         const wrapper = utils.parseHTML(html);
-        
+
         this.domElement = wrapper;
         this._domH      = $('.picker_hue', wrapper);
         this._domSL     = $('.picker_sl', wrapper);
@@ -366,6 +373,7 @@ class Picker {
         this._domEdit   = $('.picker_editor input', wrapper);
         this._domSample = $('.picker_sample', wrapper);
         this._domOkay   = $('.picker_done button', wrapper);
+        this._domSecondButton = $('.picker_second_button button', wrapper);
         this._domCancel = $('.picker_cancel button', wrapper);
 
         wrapper.classList.add('layout_' + this.settings.layout);
@@ -373,7 +381,7 @@ class Picker {
         if(!this.settings.editor) { wrapper.classList.add('no_editor'); }
         if(!this.settings.cancelButton) { wrapper.classList.add('no_cancel'); }
         this._ifPopup(() => wrapper.classList.add('popup'));
-        
+
         this._setPosition();
 
 
@@ -384,7 +392,7 @@ class Picker {
             this._setColor(this.settings.defaultColor);
         }
         this._bindEvents();
-        
+
         return true;
     }
 
@@ -395,8 +403,8 @@ class Picker {
     hide() {
         return this._toggleDOM(false);
     }
-    
-    
+
+
     /**
      * Release all resources used by this picker instance.
      */
@@ -410,19 +418,19 @@ class Picker {
 
     /*
      * Handle user input.
-     * 
+     *
      * @private
      */
     _bindEvents() {
         const that = this,
               dom = this.domElement,
               events = this._events;
-        
+
         function addEvent(target, type, handler) {
             events.add(target, type, handler);
         }
-        
-        
+
+
         //Prevent clicks while dragging from bubbling up to the parent:
         addEvent(dom, 'click', e => e.preventDefault());
 
@@ -439,8 +447,8 @@ class Picker {
         if(this.settings.alpha) {
             utils.dragTrack(events, this._domA,  (x, y) => that._setHSLA(null, null, null, 1 - y));
         }
-        
-        
+
+
         /* Direct color value editing */
 
         //Always init the editor, for accessibility and screen readers (we'll hide it with CSS if `!settings.editor`)
@@ -488,7 +496,7 @@ class Picker {
             //Note: Now that we have added the 'focusin' event, this trick requires the picker wrapper to be focusable (via `tabindex` - see /src/picker.pug),
             //or else the popup loses focus if you click anywhere on the picker's background.
             addEvent(dom, EVENT_TAB_MOVE,      timeKeeper);
-            
+
             //Cancel button:
             addEvent(this._domCancel, 'click', popupCloseProxy);
         });
@@ -498,14 +506,20 @@ class Picker {
             this._ifPopup(() => this.closeHandler(e));
             if(this.onDone) { this.onDone(this.colour); }
         };
+
+        const onSecondButtonProxy = (e) => {
+            this._ifPopup(() => this.closeHandler(e));
+            if(this.onDone) { this.onSecondButton(this.colour); }
+        };
         addEvent(this._domOkay, 'click',   onDoneProxy);
+        addEvent(this._domSecondButton, 'click',   onSecondButtonProxy);
         onKey(events, dom,      ['Enter'], onDoneProxy);
     }
 
 
     /*
      * Position the picker on screen.
-     * 
+     *
      * @private
      */
     _setPosition() {
@@ -541,7 +555,7 @@ class Picker {
 
     /*
      * "Hub" for all color changes
-     * 
+     *
      * @private
      */
     _setHSLA(h, s, l, a,  flags) {
@@ -576,7 +590,7 @@ class Picker {
               thumbH  = $('.picker_selector', uiH),
               thumbSL = $('.picker_selector', uiSL),
               thumbA  = $('.picker_selector', uiA);
-        
+
         function posX(parent, child, relX) {
             child.style.left = (relX * 100) + '%'; //(parent.clientWidth * relX) + 'px';
         }
@@ -586,24 +600,24 @@ class Picker {
 
 
         /* Hue */
-        
+
         posX(uiH, thumbH, hsl[0]);
-        
+
         //Use the fully saturated hue on the SL panel and Hue thumb:
         this._domSL.style.backgroundColor = this._domH.style.color = cssHue;
 
 
         /* S/L */
-        
+
         posX(uiSL, thumbSL, hsl[1]);
         posY(uiSL, thumbSL, 1 - hsl[2]);
-        
+
         //Use the opaque HSL on the SL thumb:
         uiSL.style.color = cssHSL;
 
 
         /* Alpha */
-        
+
         posY(uiA,  thumbA,  1 - hsl[3]);
 
         const opaque = cssHSL,
@@ -615,7 +629,7 @@ class Picker {
 
 
         /* Editable value */
-        
+
         //Don't update the editor if the user is typing.
         //That creates too much noise because of our auto-expansion of 3/4/6 -> 8 digit hex codes.
         if(!flags.fromEditor) {
@@ -633,11 +647,11 @@ class Picker {
 
 
         /* Sample swatch */
-        
+
         this._domSample.style.color = cssHSLA;
     }
-    
-    
+
+
     _ifPopup(actionIf, actionElse) {
         if(this.settings.parent && this.settings.popup) {
             actionIf && actionIf(this.settings.popup);
@@ -654,7 +668,7 @@ class Picker {
 
         const displayStyle = toVisible ? '' : 'none',
               toggle = (dom.style.display !== displayStyle);
-        
+
         if(toggle) { dom.style.display = displayStyle; }
         return toggle;
     }
@@ -662,8 +676,8 @@ class Picker {
 
 /*
     //Feature: settings to flip hue & alpha 90deg (i.e. vertical or horizontal mode)
-    
-    
+
+
         function createDragConfig(container, callbackRelative) {
 const flipped = true;
 
@@ -676,10 +690,10 @@ const flipped = true;
             function relayDrag(_, pos) {
                 const w = container.clientWidth,
                       h = container.clientHeight;
-                      
+
                 const relX = pos[0]/(flipped ? h : w),
                       relY = pos[1]/(flipped ? w : h);
-                      
+
                 callbackRelative(capRel(relX), capRel(relY));
             }
 
